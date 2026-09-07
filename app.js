@@ -6,6 +6,127 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
+     Internationalization (i18n) Engine
+     ========================================================================== */
+  let currentLang = localStorage.getItem('cleanpdf_lang') || 'en';
+  const langSelect = document.getElementById('lang-select');
+  if (langSelect) {
+    langSelect.value = currentLang;
+    langSelect.addEventListener('change', (e) => {
+      setLanguage(e.target.value);
+    });
+  }
+
+  function t(key, params = {}) {
+    const dict = (window.CleanPDF_I18N && window.CleanPDF_I18N[currentLang]) || (window.CleanPDF_I18N && window.CleanPDF_I18N.en) || {};
+    let str = dict[key] || key;
+    for (const [k, v] of Object.entries(params)) {
+      str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    }
+    return str;
+  }
+
+  function setLanguage(lang) {
+    if (!window.CleanPDF_I18N || !window.CleanPDF_I18N[lang]) return;
+    currentLang = lang;
+    localStorage.setItem('cleanpdf_lang', lang);
+    if (langSelect) langSelect.value = lang;
+
+    const dict = window.CleanPDF_I18N[lang];
+    document.documentElement.lang = lang;
+    document.title = dict.pageTitle || 'CleanPDF';
+
+    // Update Static Elements
+    const map = {
+      'i18n-brand-sub': dict.brandSub,
+      'i18n-status-text': dict.statusClientOnly,
+      'i18n-hero-title': dict.heroTitle,
+      'i18n-hero-desc': dict.heroDesc,
+      'i18n-tab-split': dict.tabSplit,
+      'i18n-tab-merge': dict.tabMerge,
+      'i18n-tab-organize': dict.tabOrganize,
+      'i18n-tab-img2pdf': dict.tabImg2Pdf,
+      'i18n-tab-pdf2img': dict.tabPdf2Img,
+      
+      // Split
+      'i18n-split-title': dict.splitTitle,
+      'i18n-split-desc': dict.splitDesc,
+      'i18n-split-drop-text': dict.splitDropText,
+      'i18n-split-drop-hint': dict.splitDropHint,
+      'i18n-split-file-label': dict.fileLabel,
+      'i18n-split-reset': dict.changeFile,
+      'i18n-split-quick-label': dict.splitQuickSelect,
+      'split-select-all': dict.splitSelectAll,
+      'split-select-odd': dict.splitSelectOdd,
+      'split-select-even': dict.splitSelectEven,
+      'split-clear-selection': dict.splitClear,
+      'i18n-split-range-label': dict.splitRangeLabel,
+      'i18n-split-grid-header': dict.splitGridHeader,
+      'i18n-split-out-label': dict.outputName,
+      'i18n-split-zip-btn': dict.splitDownloadZip,
+
+      // Merge
+      'i18n-merge-title': dict.mergeTitle,
+      'i18n-merge-desc': dict.mergeDesc,
+      'i18n-merge-drop-text': dict.mergeDropText,
+      'i18n-merge-drop-hint': dict.mergeDropHint,
+      'i18n-merge-clear': dict.clearAll,
+      'i18n-merge-out-label': dict.outputName,
+      'i18n-merge-action-btn': dict.mergeActionBtn,
+
+      // Organize
+      'i18n-organize-title': dict.organizeTitle,
+      'i18n-organize-desc': dict.organizeDesc,
+      'i18n-organize-drop-text': dict.organizeDropText,
+      'i18n-organize-drop-hint': dict.organizeDropHint,
+      'i18n-organize-file-label': dict.fileLabel,
+      'i18n-organize-rotate-all': dict.organizeRotateAll,
+      'i18n-organize-reset': dict.organizeReset,
+      'i18n-organize-out-label': dict.outputName,
+      'i18n-organize-action-btn': dict.organizeActionBtn,
+
+      // Img2Pdf
+      'i18n-img2pdf-title': dict.img2pdfTitle,
+      'i18n-img2pdf-desc': dict.img2pdfDesc,
+      'i18n-img2pdf-drop-text': dict.img2pdfDropText,
+      'i18n-img2pdf-drop-hint': dict.img2pdfDropHint,
+      'i18n-img-clear': dict.clear,
+      'i18n-img-format-label': dict.img2pdfFormatLabel,
+      'i18n-img-opt-a4': dict.img2pdfSizeA4,
+      'i18n-img-opt-fit': dict.img2pdfSizeOriginal,
+      'i18n-img-out-label': dict.outputName,
+      'i18n-img-action-btn': dict.img2pdfActionBtn,
+
+      // Pdf2Img
+      'i18n-pdf2img-title': dict.pdf2imgTitle,
+      'i18n-pdf2img-desc': dict.pdf2imgDesc,
+      'i18n-pdf2img-drop-text': dict.pdf2imgDropText,
+      'i18n-pdf2img-drop-hint': dict.pdf2imgDropHint,
+      'i18n-pdf2img-file-label': dict.fileLabel,
+      'i18n-pdf2img-reset': dict.changeFile,
+      'i18n-pdf2img-format-label': dict.formatQuality,
+      'i18n-scale-std': dict.scaleStandard,
+      'i18n-scale-hd': dict.scaleHd,
+      'i18n-scale-ultra': dict.scaleUltra,
+      'i18n-pdf2img-grid-header': dict.pdf2imgGridHeader,
+      'i18n-pdf2img-zip-label': dict.pdf2imgZipLabel,
+      'i18n-pdf2img-download-all': dict.pdf2imgDownloadAll,
+
+      // Footer
+      'i18n-footer-left': dict.footerLeft,
+      'i18n-footer-right': dict.footerRight
+    };
+
+    for (const [id, val] of Object.entries(map)) {
+      const el = document.getElementById(id);
+      if (el && val) el.textContent = val;
+    }
+
+    // Refresh dynamic summaries if open
+    if (typeof updateSelectedSummary === 'function') updateSelectedSummary();
+  }
+
+  /* ==========================================================================
      Tab Navigation (Segmented Control)
      ========================================================================== */
   const segmentBtns = document.querySelectorAll('.segment-btn');
@@ -213,10 +334,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateSelectedSummary() {
     const count = splitData ? splitData.selectedIndices.size : 0;
-    splitSelectedSummary.textContent = `${count} sayfa seçildi`;
+    splitSelectedSummary.textContent = count === 0 ? t('splitSummaryZero') : t('splitSummaryCount', { count });
     const label = document.getElementById('split-action-label');
     if (label) {
-      label.textContent = count > 0 ? `Seçilen Sayfaları İndir (${count})` : 'Sayfa Seçin';
+      label.textContent = count > 0 ? t('splitDownloadSingle', { count }) : t('splitDownloadNone');
     }
   }
 
@@ -1006,5 +1127,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Initial language setup
+  setLanguage(currentLang);
+
 });
+
 
