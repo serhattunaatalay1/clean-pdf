@@ -606,7 +606,7 @@ body {
   color: var(--text-subtle);
 }
 
-.dock-input input, .dock-input select {
+.dock-input input, .dock-input select, .custom-select {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
@@ -615,10 +615,18 @@ body {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   outline: none;
+  cursor: pointer;
 }
 
-.dock-input input:focus, .dock-input select:focus {
+.dock-input input:focus, .dock-input select:focus, .custom-select:focus {
   border-color: var(--border-focus);
+}
+
+/* Dropdown Açılan Menü (Options) Koyu Tema Düzeltmesi */
+select option {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  padding: 8px 12px;
 }
 
 .dock-actions {
