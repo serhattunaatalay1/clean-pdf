@@ -834,8 +834,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let pdf2imgOriginalName = '';
   let pdf2imgRenderedImages = []; // Array of { pageNum, dataUrl, blob, ext }
 
-  setupDropZone(pdf2imgDropzone, pdf2imgInput, (files) => {
-    if (files[0]) loadPdfForImages(files[0]);
+  setupDropzone('pdf2img-dropzone', 'pdf2img-input', (files) => {
+    if (files && files[0]) loadPdfForImages(files[0]);
   });
 
   pdf2imgResetBtn.addEventListener('click', () => {
@@ -933,19 +933,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add to UI Grid
         const card = document.createElement('div');
-        card.className = 'thumb-card';
+        card.className = 'page-thumb-card';
         card.style.cursor = 'default';
         card.innerHTML = `
-          <div class="thumb-header">
-            <span class="badge">SAYFA ${i}</span>
-            <span class="thumb-res">${canvas.width}x${canvas.height}</span>
+          <div class="card-footer" style="margin-bottom: 6px;">
+            <span>SAYFA ${i}</span>
+            <span style="font-size:10px; color:var(--text-muted);">${canvas.width}x${canvas.height}</span>
           </div>
-          <div class="canvas-wrap" style="padding:4px; max-height:220px; overflow:hidden; display:flex; justify-content:center;">
-            <img src="${dataUrl}" style="max-width:100%; max-height:210px; object-fit:contain; border-radius:4px;">
+          <div class="thumb-preview-box" style="height:190px;">
+            <img src="${dataUrl}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:2px;">
           </div>
-          <div class="thumb-footer" style="padding:6px; display:flex; justify-content:center;">
-            <button class="chip-btn download-single-img-btn" data-page="${i}" style="font-size:11px; width:100%;">
-              💾 Sayfayı İndir (.${ext})
+          <div style="width:100%; margin-top:8px;">
+            <button class="chip-btn download-single-img-btn" data-page="${i}" style="width:100%; padding:6px; font-size:11px; justify-content:center;">
+              Kaydet (.${ext})
             </button>
           </div>
         `;
