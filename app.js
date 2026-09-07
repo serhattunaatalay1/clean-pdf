@@ -813,4 +813,198 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ==========================================
+  // TAB 5: PDF TO IMAGE (.JPG / .PNG / .ZIP)
+  // ==========================================
+  const pdf2imgDropzone = document.getElementById('pdf2img-dropzone');
+  const pdf2imgInput = document.getElementById('pdf2img-input');
+  const pdf2imgWorkspace = document.getElementById('pdf2img-workspace');
+  const pdf2imgFileName = document.getElementById('pdf2img-file-name');
+  const pdf2imgTotalPages = document.getElementById('pdf2img-total-pages');
+  const pdf2imgResetBtn = document.getElementById('pdf2img-reset-btn');
+  const pdf2imgPagesGrid = document.getElementById('pdf2img-pages-grid');
+  const pdf2imgStatusLabel = document.getElementById('pdf2img-status-label');
+  const pdf2imgFormat = document.getElementById('pdf2img-format');
+  const pdf2imgScale = document.getElementById('pdf2img-scale');
+  const pdf2imgZipname = document.getElementById('pdf2img-zipname');
+  const pdf2imgDownloadAllBtn = document.getElementById('pdf2img-download-all-btn');
+
+  let pdf2imgDoc = null;
+  let pdf2imgRawBytes = null;
+  let pdf2imgOriginalName = '';
+  let pdf2imgRenderedImages = []; // Array of { pageNum, dataUrl, blob, ext }
+
+  setupDropZone(pdf2imgDropzone, pdf2imgInput, (files) => {
+    if (files[0]) loadPdfForImages(files[0]);
+  });
+
+  pdf2imgResetBtn.addEventListener('click', () => {
+    pdf2imgDoc = null;
+    pdf2imgRawBytes = null;
+    pdf2imgRenderedImages = [];
+    pdf2imgWorkspace.classList.add('hidden');
+    pdf2imgDropzone.classList.remove('hidden');
+    pdf2imgPagesGrid.innerHTML = '';
+    pdf2imgInput.value = '';
+  });
+
+  pdf2imgFormat.addEventListener('change', () => {
+    if (pdf2imgDoc) renderAllPagesAsImages();
+  });
+
+  pdf2imgScale.addEventListener('change', () => {
+    if (pdf2imgDoc) renderAllPagesAsImages();
+  });
+
+  async function loadPdfForImages(file) {
+    if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+      showToast('Lütfen geçerli bir PDF dosyası seçin.', 'error');
+      return;
+    }
+    showLoading('PDF taranıyor ve sayfalar yükleniyor...');
+    try {
+      pdf2imgOriginalName = file.name;
+      const baseName = file.name.replace(/\.[^/.]+$/, '');
+      pdf2imgZipname.value = `${baseName}-gorseller.zip`;
+
+      const arrayBuffer = await file.arrayBuffer();
+      pdf2imgRawBytes = new Uint8Array(arrayBuffer);
+
+      pdf2imgDoc = await pdfjsLib.getDocument({ data: pdf2imgRawBytes }).promise;
+      pdf2imgFileName.textContent = file.name;
+      pdf2imgTotalPages.textContent = `${pdf2imgDoc.numPages} SAYFA`;
+
+      pdf2imgDropzone.classList.add('hidden');
+      pdf2imgWorkspace.classList.remove('hidden');
+
+      await renderAllPagesAsImages();
+      showToast('Tüm sayfalar başarıyla görsele çevrildi.', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('PDF okunamadı: ' + err.message, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function renderAllPagesAsImages() {
+    if (!pdf2imgDoc) return;
+    showLoading('Sayfalar yüksek çözünürlükte görsele dönüştürülüyor...');
+    pdf2imgPagesGrid.innerHTML = '';
+    pdf2imgRenderedImages = [];
+
+    const format = pdf2imgFormat.value; // 'image/jpeg' or 'image/png'
+    const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+    const scaleFactor = parseFloat(pdf2imgScale.value) || 2.0;
+
+    const numPages = pdf2imgDoc.numPages;
+    pdf2imgStatusLabel.textContent = `0 / ${numPages} işlendi`;
+
+    try {
+      for (let i = 1; i <= numPages; i++) {
+        pdf2imgStatusLabel.textContent = `${i} / ${numPages} dönüştürülüyor...`;
+        const page = await pdf2imgDoc.getPage(i);
+        const viewport = page.getViewport({ scale: scaleFactor });
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        const dataUrl = canvas.toDataURL(format, 0.92);
+        
+        // Convert dataUrl to blob for fast zipping
+        const base64 = dataUrl.split(',')[1];
+        const bin = atob(base64);
+        const u8 = new Uint8Array(bin.length);
+        for (let j = 0; j < bin.length; j++) u8[j] = bin.charCodeAt(j);
+
+        const item = {
+          pageNum: i,
+          dataUrl,
+          bytes: u8,
+          ext,
+          width: canvas.width,
+          height: canvas.height
+        };
+        pdf2imgRenderedImages.push(item);
+
+        // Add to UI Grid
+        const card = document.createElement('div');
+        card.className = 'thumb-card';
+        card.style.cursor = 'default';
+        card.innerHTML = `
+          <div class="thumb-header">
+            <span class="badge">SAYFA ${i}</span>
+            <span class="thumb-res">${canvas.width}x${canvas.height}</span>
+          </div>
+          <div class="canvas-wrap" style="padding:4px; max-height:220px; overflow:hidden; display:flex; justify-content:center;">
+            <img src="${dataUrl}" style="max-width:100%; max-height:210px; object-fit:contain; border-radius:4px;">
+          </div>
+          <div class="thumb-footer" style="padding:6px; display:flex; justify-content:center;">
+            <button class="chip-btn download-single-img-btn" data-page="${i}" style="font-size:11px; width:100%;">
+              💾 Sayfayı İndir (.${ext})
+            </button>
+          </div>
+        `;
+        pdf2imgPagesGrid.appendChild(card);
+      }
+
+      // Tekil indirme butonları
+      pdf2imgPagesGrid.querySelectorAll('.download-single-img-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pageNum = parseInt(btn.getAttribute('data-page'), 10);
+          const found = pdf2imgRenderedImages.find(img => img.pageNum === pageNum);
+          if (found) {
+            const baseName = pdf2imgOriginalName.replace(/\.[^/.]+$/, '');
+            downloadBlob(found.bytes, `${baseName}-sayfa-${found.pageNum}.${found.ext}`, format);
+            showToast(`Sayfa ${found.pageNum} indirildi.`, 'success');
+          }
+        });
+      });
+
+      pdf2imgStatusLabel.textContent = `${numPages} sayfa hazır`;
+    } catch (err) {
+      console.error(err);
+      showToast('Görsel render hatası: ' + err.message, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  // Topluca ZIP indirme
+  pdf2imgDownloadAllBtn.addEventListener('click', async () => {
+    if (pdf2imgRenderedImages.length === 0) {
+      showToast('Dönüştürülmüş görsel bulunamadı.', 'error');
+      return;
+    }
+
+    showLoading('Görseller ZIP arşivine paketleniyor...');
+    try {
+      const zip = new JSZip();
+      const baseName = pdf2imgOriginalName.replace(/\.[^/.]+$/, '');
+
+      pdf2imgRenderedImages.forEach(img => {
+        const fileName = `${baseName}-sayfa-${String(img.pageNum).padStart(3, '0')}.${img.ext}`;
+        zip.file(fileName, img.bytes);
+      });
+
+      const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+      let zipName = pdf2imgZipname.value.trim() || 'sayfalar.zip';
+      if (!zipName.endsWith('.zip')) zipName += '.zip';
+
+      downloadBlob(zipBlob, zipName, 'application/zip');
+      showToast(`${pdf2imgRenderedImages.length} sayfa içeren ZIP indirildi!`, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('ZIP oluşturulurken hata: ' + err.message, 'error');
+    } finally {
+      hideLoading();
+    }
+  });
+
 });
+

@@ -30,6 +30,9 @@ Most popular PDF tools (iLovePDF, Smallpdf, etc.):
    - View live page thumbnails, rotate skewed pages 90°, delete unwanted pages, and export cleaned documents.
 4. **🖼️ Image to PDF:**
    - Convert collections of JPG, PNG, and WebP images into standardized A4 or native-resolution PDF documents.
+5. **📸 PDF to Images (JPG / PNG / ZIP):**
+   - High-definition page rendering (1.5x, 2x HD, 3x Ultra HD).
+   - Export single pages or bulk batch download all pages as a compressed `.ZIP` package.
 
 ---
 

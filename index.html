@@ -46,6 +46,9 @@
         <button class="segment-btn" data-tab="img2pdf">
           <span>Görselden PDF</span>
         </button>
+        <button class="segment-btn" data-tab="pdf2img">
+          <span>PDF'ten Görsele</span>
+        </button>
       </div>
     </div>
 
@@ -236,6 +239,66 @@
             </div>
             <button id="img-action-btn" class="btn btn-primary">
               <span>PDF Oluştur ve İndir</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: PDF TO IMAGE -->
+      <section id="tab-pdf2img" class="tab-panel">
+        <div class="panel-intro">
+          <h2>PDF'ten Görsele</h2>
+          <p>PDF sayfalarını yüksek kaliteli JPEG veya PNG resimlerine dönüştürün. Tek tek ya da topluca ZIP olarak indirin.</p>
+        </div>
+
+        <div class="drop-zone" id="pdf2img-dropzone">
+          <input type="file" id="pdf2img-input" accept="application/pdf" class="file-input">
+          <div class="drop-content">
+            <span class="drop-action-text">PDF dosyasını buraya sürükleyin veya seçin</span>
+            <span class="drop-hint">Sayfalar doğrudan yüksek çözünürlükte görsele çevrilir • Sunucuya gitmez</span>
+          </div>
+        </div>
+
+        <div id="pdf2img-workspace" class="tool-workspace hidden">
+          <div class="meta-strip">
+            <div class="file-meta">
+              <span class="meta-label">DOSYA:</span>
+              <span class="meta-value" id="pdf2img-file-name">-</span>
+              <span class="meta-badge" id="pdf2img-total-pages">- SAYFA</span>
+            </div>
+            <button id="pdf2img-reset-btn" class="btn-subtle">✕ Dosyayı Değiştir</button>
+          </div>
+
+          <div class="selection-toolbar">
+            <div class="quick-selectors">
+              <span class="toolbar-label">Biçim & Kalite:</span>
+              <select id="pdf2img-format" style="background:var(--bg-surface); color:var(--text-main); border:1px solid var(--border-subtle); border-radius:6px; padding:4px 8px; font-size:13px;">
+                <option value="image/jpeg">JPEG (.jpg)</option>
+                <option value="image/png">PNG (.png)</option>
+              </select>
+              <select id="pdf2img-scale" style="background:var(--bg-surface); color:var(--text-main); border:1px solid var(--border-subtle); border-radius:6px; padding:4px 8px; font-size:13px;">
+                <option value="1.5">Standart (1.5x)</option>
+                <option value="2.0" selected>Yüksek Kalite (2x HD)</option>
+                <option value="3.0">Ultra HD (3x)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-header">
+            <span>Dönüştürülen Sayfalar:</span>
+            <span id="pdf2img-status-label" class="selected-summary">Hazırlanıyor...</span>
+          </div>
+          <div id="pdf2img-pages-grid" class="thumbnail-grid">
+            <!-- Görsel Kartları -->
+          </div>
+
+          <div class="action-dock">
+            <div class="dock-input">
+              <label for="pdf2img-zipname">Arşiv Adı:</label>
+              <input type="text" id="pdf2img-zipname" value="sayfalar.zip">
+            </div>
+            <button id="pdf2img-download-all-btn" class="btn btn-primary">
+              <span>Tüm Sayfaları İndir (.ZIP)</span>
             </button>
           </div>
         </div>
