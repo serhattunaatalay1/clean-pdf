@@ -58,10 +58,29 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`========================================================`);
-  console.log(`  📄 CleanPDF Kokpiti Aktif!`);
-  console.log(`  Adres: http://localhost:${PORT}`);
-  console.log(`  Gizlilik: %100 Yerel, Dosyalar Sunucuya Yüklenmez`);
-  console.log(`========================================================`);
+let currentPort = PORT;
+
+function startServer(port) {
+  server.listen(port, () => {
+    console.log(`========================================================`);
+    console.log(`  CleanPDF Kokpiti Aktif!`);
+    console.log(`  Adres: http://localhost:${port}`);
+    console.log(`  Gizlilik: %100 Yerel, Dosyalar Asla Sunucuya Gitmez`);
+    console.log(`========================================================`);
+  });
+}
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.warn(`[UYARI] Port ${currentPort} zaten kullanimda. Bir sonraki porta geciliyor...`);
+    currentPort++;
+    setTimeout(() => {
+      startServer(currentPort);
+    }, 200);
+  } else {
+    console.error('[HATA] Sunucu baslatilamadi:', err);
+  }
 });
+
+startServer(currentPort);
+
